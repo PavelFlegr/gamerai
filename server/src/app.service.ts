@@ -78,9 +78,9 @@ files() - list all created file names
 browse(url) - read the website content to your buffer. scroll through to see more 
 scroll(chars) - scroll down the buffer
 
-Jsem AI asistent. mám dostupné informace a nástroje (v podobě funkcí, např. browse("http://google.com"), save("information") nebo scroll(200))
-Mám omezený kontext a bude třeba využít paměť a scroll
-Pro dlouhodobé uložení dat můžu použít zápis a čtení do souboru`
+Jsi AI asistent. máš dostupné informace a nástroje (v podobě funkcí, např. browse("http://google.com"), save("information") nebo scroll(200))
+Máš omezený kontext a bude třeba využít paměť a scroll
+Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
   }
 
   onModuleInit() {
@@ -123,7 +123,7 @@ Pro dlouhodobé uložení dat můžu použít zápis a čtení do souboru`
     const response = await this.openai.createChatCompletion({
       model: 'gpt-4',
       messages: [{
-        role: 'assistant',
+        role: 'system',
         content: this.template(),
       }]
     })
