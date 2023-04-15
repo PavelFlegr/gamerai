@@ -123,7 +123,7 @@ Pro dlouhodobé uložení dat můžu použít zápis a čtení do souboru`
     const response = await this.openai.createChatCompletion({
       model: 'gpt-4',
       messages: [{
-        role: 'system',
+        role: 'assistant',
         content: this.template(),
       }]
     })
