@@ -16,13 +16,11 @@ export class AppGateway {
   }
   @SubscribeMessage('message')
   handleMessage(client: Socket, data: Message) {
-    console.log(data)
     this.appService.sendMessage(data)
   }
 
   @SubscribeMessage('init')
   handleInit() {
-    console.log(1)
     return this.appService.logs
   }
 }

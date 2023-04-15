@@ -143,7 +143,7 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
   }
   async sendMessage(message: Message): Promise<void> {
     if(message.text) {
-      this.logs.push(message)
+      this.eventEmitter.emit('message', message)
     }
     await this.getReply()
   }

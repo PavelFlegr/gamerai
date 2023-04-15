@@ -42,13 +42,9 @@ export default function App() {
   }, [socket]);
 
   const sendMessage = async () => {
-    let currentMessages = messages
+    socket.emit('message', { author: 'user', text: input })
     if(input) {
-      currentMessages = [...messages, { author: 'user', text: input }]
-      setMessages(currentMessages)
       setInput('')
-      socket.emit('message', { author: 'user', text: input })
-      scrollToBottom.start()
     }
   }
 
