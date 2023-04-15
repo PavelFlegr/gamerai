@@ -93,22 +93,30 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
   async processActions(message: string) {
     const actions = message.matchAll(actionParser)
     for(const action of actions) {
+      console.log(action[1])
       const name = action[1]
       const args = action[2]
       switch (name) {
         case 'browse':
-          const url = JSON.parse(args.replace(/'/g, '"'))
-          const data = await got.get(url).text()
-          const doc = new JSDOM(data, { url: url })
-          const article = new Readability(doc.window.document).parse()
-          console.log(article.textContent)
-          this.bufferIndex = this.buffer.length
-          this.buffer += `
+          console.log('browsing')
+          try {
+            const url = JSON.parse(args.replace(/'/g, '"'))
+            const data = await got.get(url).text()
+            const doc = new JSDOM(data, { url: url })
+            const article = new Readability(doc.window.document).parse()
+            console.log(article.textContent)
+            this.bufferIndex = this.buffer.length
+            this.buffer += `
           ${action[0]}
           ${article.textContent}
           `
+          } catch(e) {
+            this.bufferIndex = this.buffer.length
+            this.buffer += `url isn't valid\n`
+          }
           break
         case 'scroll':
+          console.log('scrolling')
           const chars = JSON.parse(args)
           this.bufferIndex += chars
           break
