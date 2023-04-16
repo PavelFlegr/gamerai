@@ -13,7 +13,6 @@ export default defineConfig({
       '/socket.io': {
         target: 'http://localhost:5555',
       }
-
     }
   }
 })

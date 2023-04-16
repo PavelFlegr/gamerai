@@ -49,7 +49,6 @@ export default function App() {
   }
 
   return (
-    <MantineProvider withGlobalStyles withNormalizeCSS>
       <Container mx="auto">
         <Card shadow="sm">
           <Stack justify="space-between">
@@ -72,6 +71,5 @@ export default function App() {
 
         </Card>
       </Container>
-    </MantineProvider>
   );
 }
