@@ -4,6 +4,7 @@ import got from 'got';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import { gotScraping } from 'got-scraping';
+import { Message } from './message.model.js';
 
 
 interface Request {
@@ -57,5 +58,10 @@ export class AppController {
     }
 
     return result
+  }
+
+  @Post('chat')
+  async chat(@Body() messages: Message[]) {
+    return await this.appService.sendPrompt(messages)
   }
 }

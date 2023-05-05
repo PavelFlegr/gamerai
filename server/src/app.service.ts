@@ -126,6 +126,18 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
     }
   }
 
+  async sendPrompt(messages: Message[]) {
+    const response = await this.openai.createChatCompletion({
+      model: 'gpt-4',
+      messages: messages.map(message => ({
+        role: message.author === 'user' ? 'user' : 'assistant',
+        content: message.text,
+      })),
+    })
+
+    return { text: response.data.choices[0].message.content, author: 'assistant' }
+  }
+
   async singleResponse(input: string): Promise<string> {
     const response = await this.openai.createChatCompletion({
       model: 'gpt-4',

@@ -5,11 +5,12 @@ import './index.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { MantineProvider } from '@mantine/core';
 import App2 from './App2';
+import App3 from './App3';
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App/>,
+    element: <App3/>,
   },
   {
     path: "helper",
