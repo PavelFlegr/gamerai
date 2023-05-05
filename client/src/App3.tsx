@@ -15,6 +15,10 @@ import { useInputState, useTimeout } from '@mantine/hooks';
 import { io, Socket } from 'socket.io-client';
 import ky from 'ky';
 
+interface Response {
+  message: Message,
+  cost: number,
+}
 interface Message {
   author: string
   text: string
@@ -23,6 +27,7 @@ interface Message {
 export default function App3() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useInputState('')
+  const [cost, setCost] = useState(0);
   const viewport = useRef<HTMLDivElement>(null);
   const scrollToBottom = useTimeout(() => viewport.current?.scrollTo({ top: viewport.current.scrollHeight, behavior: 'smooth' }), 0);
 
@@ -33,8 +38,9 @@ export default function App3() {
     if(input) {
       setInput('')
     }
-    const response = await ky.post('/api/chat', {json: newMessages, timeout: false}).json<Message>()
-    setMessages([...newMessages, response])
+    const response = await ky.post('/api/chat', {json: newMessages, timeout: false}).json<Response>()
+    setCost(cost + response.cost)
+    setMessages([...newMessages, response.message])
     scrollToBottom.start()
   }
 
@@ -56,6 +62,7 @@ export default function App3() {
               <Textarea value={input} onChange={setInput}/>
               <Space h="xs"/>
               <Button onClick={sendMessage}>Send</Button>
+              You spent { cost }$ in total to do this nonsense, good job
             </Box>
           </Stack>
 

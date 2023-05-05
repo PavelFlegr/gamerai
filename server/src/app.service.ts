@@ -135,7 +135,9 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
       })),
     })
 
-    return { text: response.data.choices[0].message.content, author: 'assistant' }
+    const { prompt_tokens, completion_tokens } = response.data.usage
+    const cost = (prompt_tokens * 0.03 + completion_tokens * 0.06) / 1000
+    return  { cost, message: { text: response.data.choices[0].message.content, author: 'assistant' }}
   }
 
   async singleResponse(input: string): Promise<string> {
