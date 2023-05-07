@@ -1,4 +1,6 @@
+import { ChatCompletionRequestMessageRoleEnum } from 'openai';
+
 export interface Message {
-  author: string
+  author: ChatCompletionRequestMessageRoleEnum
   text: string
 }

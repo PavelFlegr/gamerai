@@ -1,18 +1,25 @@
 import {
+  ActionIcon,
   Box,
   Button,
   Card,
   Container,
-  Divider, Flex, Loader,
+  Divider, Flex, Loader, Modal,
   ScrollArea,
   Space, Stack,
   Text,
   Textarea, ThemeIcon,
 } from '@mantine/core';
 import { KeyboardEventHandler, useRef, useState } from 'react';
-import { useInputState, useTimeout } from '@mantine/hooks';
+import { useDisclosure, useInputState, useTimeout } from '@mantine/hooks';
 import ky from 'ky';
-import { CurrencyDollar } from 'tabler-icons-react';
+import {
+  CurrencyDollar,
+  Send,
+  Settings as SettingsIcon,
+} from 'tabler-icons-react';
+import { Settings } from './model';
+import SettingsComponent from './components/settings';
 
 interface Response {
   message: Message,
@@ -24,6 +31,8 @@ interface Message {
 }
 
 export default function App3() {
+  const [settings, setSettings] = useState({ systemMsg: '' })
+  const [opened, { open, close }] = useDisclosure(false);
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useInputState('')
   const [responding, setResponding] = useState(false)
@@ -31,6 +40,10 @@ export default function App3() {
   const viewport = useRef<HTMLDivElement>(null);
   const scrollToBottom = useTimeout(() => viewport.current?.scrollTo({ top: viewport.current.scrollHeight, behavior: 'smooth' }), 0);
 
+  const saveSettings = (newSettings: Settings) => {
+    setSettings(newSettings)
+    close()
+  }
   const handleEnter: KeyboardEventHandler<HTMLTextAreaElement> = async (e) => {
     if(e.key === 'Enter' && !e.getModifierState('Shift')) {
       e.preventDefault()
@@ -47,7 +60,7 @@ export default function App3() {
     setMessages(newMessages)
     scrollToBottom.start()
     setInput('')
-    const response = await ky.post('/api/chat', {json: newMessages, timeout: false}).json<Response>()
+    const response = await ky.post('/api/chat', {json: [...newMessages, { author: 'system', text: settings.systemMsg }], timeout: false}).json<Response>()
     setCost(cost + response.cost)
     setMessages([...newMessages, response.message])
     scrollToBottom.start()
@@ -55,6 +68,10 @@ export default function App3() {
   }
 
   return (
+    <>
+      <Modal opened={opened} onClose={close} title="Settings">
+        <SettingsComponent saveSettings={saveSettings} settings={settings}></SettingsComponent>
+      </Modal>
       <Container mx="auto">
         <Card h={'100vh'} shadow="sm">
           <Stack h={'100%'} justify="space-between">
@@ -77,18 +94,23 @@ export default function App3() {
               <Textarea onKeyDown={handleEnter} minRows={5} value={input} onChange={setInput}/>
               <Space h="xs"/>
               <Flex justify="space-between">
-                <Flex align="center">
-                  <ThemeIcon color={"green"} mr={5}><CurrencyDollar/></ThemeIcon>
+                <Flex align="center" gap={5}>
+                  <ThemeIcon color={'green'}><CurrencyDollar/></ThemeIcon>
                   <Space h="xs"></Space>
                   <Text inline={true}> You've spent {cost}$ on this nonsense, good job</Text>
-                  <ThemeIcon color={"green"} ml={5}><CurrencyDollar/></ThemeIcon>
+                  <ThemeIcon color={'green'}><CurrencyDollar/></ThemeIcon>
+                </Flex>
+                <Flex align={'center'} gap={5}>
+                  <ActionIcon onClick={open}><SettingsIcon/></ActionIcon>
+                  <Button rightIcon={<Send/>} disabled={responding} onClick={sendMessage}>Send</Button>
                 </Flex>
 
-                <Button disabled={responding} onClick={sendMessage}>Send</Button>
               </Flex>
             </Box>
           </Stack>
         </Card>
       </Container>
+    </>
+
   );
 }

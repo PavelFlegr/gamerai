@@ -1,5 +1,9 @@
-import { Body, Controller, Get, Injectable, OnModuleInit, Post } from '@nestjs/common';
-import { Configuration, OpenAIApi } from 'openai';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  ChatCompletionResponseMessageRoleEnum,
+  Configuration,
+  OpenAIApi,
+} from 'openai';
 import { format } from 'date-fns';
 import got from 'got';
 import { JSDOM } from 'jsdom';
@@ -130,7 +134,7 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
     const response = await this.openai.createChatCompletion({
       model: 'gpt-4',
       messages: messages.map(message => ({
-        role: message.author === 'user' ? 'user' : 'assistant',
+        role: message.author,
         content: message.text,
       })),
     })
@@ -162,7 +166,7 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
       }]
     })
 
-    const reply = { author: 'AI', text: response.data.choices[0].message.content }
+    const reply = { author: ChatCompletionResponseMessageRoleEnum.Assistant, text: response.data.choices[0].message.content }
     this.eventEmitter.emit('message', reply)
 
     return reply
