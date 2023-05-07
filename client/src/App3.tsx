@@ -3,15 +3,16 @@ import {
   Button,
   Card,
   Container,
-  Divider, Loader,
+  Divider, Flex, Loader,
   ScrollArea,
   Space, Stack,
   Text,
-  Textarea,
+  Textarea, ThemeIcon,
 } from '@mantine/core';
 import { KeyboardEventHandler, useRef, useState } from 'react';
 import { useInputState, useTimeout } from '@mantine/hooks';
 import ky from 'ky';
+import { CurrencyDollar } from 'tabler-icons-react';
 
 interface Response {
   message: Message,
@@ -75,8 +76,16 @@ export default function App3() {
               <Space h="xs"/>
               <Textarea onKeyDown={handleEnter} minRows={5} value={input} onChange={setInput}/>
               <Space h="xs"/>
-              <Button disabled={responding} onClick={sendMessage}>Send</Button>
-              You spent { cost }$ in total to do this nonsense, good job
+              <Flex justify="space-between">
+                <Flex align="center">
+                  <ThemeIcon color={"green"} mr={5}><CurrencyDollar/></ThemeIcon>
+                  <Space h="xs"></Space>
+                  <Text inline={true}> You've spent {cost}$ on this nonsense, good job</Text>
+                  <ThemeIcon color={"green"} ml={5}><CurrencyDollar/></ThemeIcon>
+                </Flex>
+
+                <Button disabled={responding} onClick={sendMessage}>Send</Button>
+              </Flex>
             </Box>
           </Stack>
         </Card>
