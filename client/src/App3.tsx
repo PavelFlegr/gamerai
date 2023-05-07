@@ -60,7 +60,7 @@ export default function App3() {
     setMessages(newMessages)
     scrollToBottom.start()
     setInput('')
-    const response = await ky.post('/api/chat', {json: [...newMessages, { author: 'system', text: settings.systemMsg }], timeout: false}).json<Response>()
+    const response = await ky.post('/api/chat', {json: [{ author: 'system', text: settings.systemMsg }, ...newMessages], timeout: false}).json<Response>()
     setCost(cost + response.cost)
     setMessages([...newMessages, response.message])
     scrollToBottom.start()
