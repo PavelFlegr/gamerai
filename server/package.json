@@ -30,6 +30,7 @@
     "@nestjs/platform-socket.io": "^9.4.0",
     "@nestjs/websockets": "^9.4.0",
     "@types/jsdom": "^21.1.1",
+    "compute-cosine-similarity": "^1.0.0",
     "date-fns": "^2.29.3",
     "got": "^12.6.0",
     "got-scraping": "^3.2.13",

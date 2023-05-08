@@ -1,16 +1,13 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import {
-  ChatCompletionResponseMessageRoleEnum,
-  Configuration,
-  OpenAIApi,
-} from 'openai';
+import { ChatCompletionResponseMessageRoleEnum, Configuration, OpenAIApi } from 'openai';
 import { format } from 'date-fns';
 import got from 'got';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
-import { Message } from './message.model.js';
+import { Message, Prompt } from './message.model.js';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import * as process from 'process';
+import similarity from 'compute-cosine-similarity'
 
 const actionParser = /(browse|scroll])\((.*)\)/gi
 
@@ -130,18 +127,55 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
     }
   }
 
-  async sendPrompt(messages: Message[]) {
+  cosinesim(A,B){
+    let dotproduct=0;
+    let mA=0;
+    let mB=0;
+    for(let i = 0; i < A.length; i++){
+      dotproduct += (A[i] * B[i]);
+      mA += (A[i]*A[i]);
+      mB += (B[i]*B[i]);
+    }
+    mA = Math.sqrt(mA);
+    mB = Math.sqrt(mB);
+
+    return (dotproduct) / ((mA) * (mB));
+  }
+
+
+  async sendPrompt(prompt: Prompt) {
+    if (prompt.settings.systemMsg !== '') {
+      prompt.messages = [{ role: 'system', content: prompt.settings.systemMsg }, ...prompt.messages]
+    }
+
+    let cost = 0
+
+    if(prompt.settings.context !== '') {
+      const contextBlocks = prompt.settings.context.split('\n\n')
+
+      const embeddingsResponse = await this.openai.createEmbedding({
+        input: [prompt.messages[prompt.messages.length - 1].content, ...contextBlocks],
+        model: 'text-embedding-ada-002'
+      })
+
+      cost += embeddingsResponse.data.usage.total_tokens * 0.0004 / 1000
+      const [questionEmbedding, ...contextEmbeddings] = embeddingsResponse.data.data
+
+      const similarities = contextEmbeddings.map(embedding => ({ ...embedding, similarity: similarity(embedding.embedding, questionEmbedding.embedding) })).sort((a, b) => b.similarity - a.similarity)
+
+      const context = similarities.map(embedding => contextBlocks[embedding.index - 1])
+
+      prompt.messages = [{ role: 'system', content: `Base your response on the following data:\n${context.join('\n')}` }, ...prompt.messages]
+    }
+
     const response = await this.openai.createChatCompletion({
       model: 'gpt-4',
-      messages: messages.map(message => ({
-        role: message.author,
-        content: message.text,
-      })),
+      messages: prompt.messages,
     })
 
     const { prompt_tokens, completion_tokens } = response.data.usage
-    const cost = (prompt_tokens * 0.03 + completion_tokens * 0.06) / 1000
-    return  { cost, message: { text: response.data.choices[0].message.content, author: 'assistant' }}
+    cost += (prompt_tokens * 0.03 + completion_tokens * 0.06) / 1000
+    return  { cost, message: { content: response.data.choices[0].message.content, role: 'assistant' }}
   }
 
   async singleResponse(input: string): Promise<string> {

@@ -1,3 +1,4 @@
 export interface Settings {
-  systemMsg: string
+  systemMsg: string;
+  context: string;
 }

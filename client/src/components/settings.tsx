@@ -8,6 +8,8 @@ export default function SettingsComponent(props: { settings: Settings, saveSetti
   return <>
     <Textarea onChange={e => setSettings({...settings, systemMsg: e.target.value})} label="System message" minRows={10} value={settings.systemMsg}></Textarea>
     <Space h="xs"/>
+    <Textarea onChange={e => setSettings({...settings, context: e.target.value})} label="Context" minRows={10} value={settings.context}></Textarea>
+    <Space h="xs"/>
     <Button onClick={() => props.saveSettings(settings)}>Save</Button>
   </>
 }

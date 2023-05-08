@@ -1,10 +1,9 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AppService } from './app.service.js';
-import got from 'got';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import { gotScraping } from 'got-scraping';
-import { Message } from './message.model.js';
+import { Message, Prompt } from './message.model.js';
 
 
 interface Request {
@@ -61,7 +60,7 @@ export class AppController {
   }
 
   @Post('chat')
-  async chat(@Body() messages: Message[]) {
-    return await this.appService.sendPrompt(messages)
+  async chat(@Body() prompt: Prompt) {
+    return await this.appService.sendPrompt(prompt)
   }
 }

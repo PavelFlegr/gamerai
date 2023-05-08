@@ -26,12 +26,12 @@ interface Response {
   cost: number,
 }
 interface Message {
-  author: string
-  text: string
+  role: string
+  content: string
 }
 
 export default function App3() {
-  const [settings, setSettings] = useState({ systemMsg: '' })
+  const [settings, setSettings] = useState<Settings>({ systemMsg: '', context: '' })
   const [opened, { open, close }] = useDisclosure(false);
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useInputState('')
@@ -56,11 +56,11 @@ export default function App3() {
       return
     }
     setResponding(true)
-    let newMessages = [...messages, { author: 'user', text: input }]
+    let newMessages = [...messages, { role: 'user', content: input }]
     setMessages(newMessages)
     scrollToBottom.start()
     setInput('')
-    const response = await ky.post('/api/chat', {json: [{ author: 'system', text: settings.systemMsg }, ...newMessages], timeout: false}).json<Response>()
+    const response = await ky.post('/api/chat', {json: {messages: newMessages, settings}, timeout: false}).json<Response>()
     setCost(cost + response.cost)
     setMessages([...newMessages, response.message])
     scrollToBottom.start()
@@ -78,8 +78,8 @@ export default function App3() {
             <ScrollArea viewportRef={viewport}>
               {messages.map((message, i) => (
                 <div key={i}>
-                  <Text fz="xs">{message.author}</Text>
-                  <Text style={{whiteSpace: 'break-spaces'}}>{message.text}</Text>
+                  <Text fz="xs">{message.role}</Text>
+                  <Text style={{whiteSpace: 'break-spaces'}}>{message.content}</Text>
                   <Divider/>
                 </div>
               ))}
@@ -104,7 +104,6 @@ export default function App3() {
                   <ActionIcon onClick={open}><SettingsIcon/></ActionIcon>
                   <Button rightIcon={<Send/>} disabled={responding} onClick={sendMessage}>Send</Button>
                 </Flex>
-
               </Flex>
             </Box>
           </Stack>
