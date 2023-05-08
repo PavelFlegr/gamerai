@@ -1,5 +1,10 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { ChatCompletionResponseMessageRoleEnum, Configuration, OpenAIApi } from 'openai';
+import {
+  ChatCompletionResponseMessageRoleEnum,
+  Configuration,
+  CreateEmbeddingResponseDataInner,
+  OpenAIApi,
+} from 'openai';
 import { format } from 'date-fns';
 import got from 'got';
 import { JSDOM } from 'jsdom';
@@ -142,6 +147,16 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
     return (dotproduct) / ((mA) * (mB));
   }
 
+  chunkSubstr(str, size): string[] {
+    const numChunks = Math.ceil(str.length / size)
+    const chunks = new Array(numChunks)
+
+    for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+      chunks[i] = str.substr(o, size)
+    }
+
+    return chunks
+  }
 
   async sendPrompt(prompt: Prompt) {
     if (prompt.settings.systemMsg !== '') {
@@ -151,7 +166,7 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
     let cost = 0
 
     if(prompt.settings.context !== '') {
-      const contextBlocks = prompt.settings.context.split('\n\n')
+      const contextBlocks = this.chunkSubstr(prompt.settings.context, 1000)
 
       const embeddingsResponse = await this.openai.createEmbedding({
         input: [prompt.messages[prompt.messages.length - 1].content, ...contextBlocks],
@@ -165,7 +180,7 @@ Pro dlouhodobé uložení dat můžeš použít zápis a čtení do souboru`
 
       const context = similarities.map(embedding => contextBlocks[embedding.index - 1])
 
-      prompt.messages = [{ role: 'system', content: `Base your response on the following data:\n${context.join('\n')}` }, ...prompt.messages]
+      prompt.messages = [{ role: 'system', content: `Base your response only on the following data:\n${context.slice(0, 5).join('\n')}` }, ...prompt.messages]
     }
 
     const response = await this.openai.createChatCompletion({
