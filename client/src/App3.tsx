@@ -6,7 +6,7 @@ import {
   Container,
   Divider, Flex, Loader, Modal,
   ScrollArea,
-  Space, Stack,
+  Space, Stack, Table,
   Text,
   Textarea, ThemeIcon,
 } from '@mantine/core';
@@ -20,6 +20,11 @@ import {
 } from 'tabler-icons-react';
 import { Settings } from './model';
 import SettingsComponent from './components/settings';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 
 interface Response {
   message: Message,
@@ -77,9 +82,29 @@ export default function App3() {
           <Stack h={'100%'} justify="space-between">
             <ScrollArea viewportRef={viewport}>
               {messages.map((message, i) => (
-                <div key={i}>
+                <div style={{whiteSpace:'break-spaces'}} key={i}>
                   <Text fz="xs">{message.role}</Text>
-                  <Text style={{whiteSpace: 'break-spaces'}}>{message.content}</Text>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+                    code({node, inline, className, children, ...props}) {
+                      const match = /language-(\w+)/.exec(className || '')
+                      return !inline && match ? (
+                        <SyntaxHighlighter
+                          {...props}
+                          children={String(children).replace(/\n$/, '')}
+                          style={a11yDark}
+                          language={match[1]}
+                          PreTag="div"
+                        />
+                      ) : (
+                        <code {...props} className={className}>
+                          {children}
+                        </code>
+                      )
+                    },
+                    table({node, ...props}) {
+                      return <Table {...props}/>
+                    }
+                  }}>{message.content}</ReactMarkdown>
                   <Divider/>
                 </div>
               ))}
