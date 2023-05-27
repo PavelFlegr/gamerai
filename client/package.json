@@ -13,6 +13,7 @@
     "@mantine/core": "^6.0.7",
     "@mantine/hooks": "^6.0.7",
     "date-fns": "^2.29.3",
+    "jotai": "^2.1.0",
     "ky": "^0.33.3",
     "localforage": "^1.10.0",
     "match-sorter": "^6.3.1",

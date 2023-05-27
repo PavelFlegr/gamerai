@@ -1,14 +1,17 @@
-import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Socket, Server } from 'socket.io';
-import { AppService } from './app.service.js';
-import { Message } from './message.model.js';
-import { OnEvent } from '@nestjs/event-emitter';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets'
+import { Socket, Server } from 'socket.io'
+import { AppService } from './app.service.js'
+import { Message } from './model/message.model.js'
+import { OnEvent } from '@nestjs/event-emitter'
 @WebSocketGateway()
 export class AppGateway {
   @WebSocketServer()
   server: Server
-  constructor(private appService: AppService) {
-  }
+  constructor(private appService: AppService) {}
 
   @OnEvent('message')
   handleAIMessage(message: Message) {
