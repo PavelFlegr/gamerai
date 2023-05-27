@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
+  Anchor,
   Button,
   Container,
   PasswordInput,
@@ -29,22 +30,9 @@ export default function Login() {
 
   return (
     <Container mx="auto" size={400}>
-      <a href="/login">login</a>
-      <h1>Login</h1>
-      <form onSubmit={login}>
-        <TextInput
-          label={"email"}
-          value={email}
-          onChange={setEmail}
-        ></TextInput>
-        <PasswordInput
-          label={"password"}
-          value={password}
-          onChange={setPassword}
-        ></PasswordInput>
-        <Space h={"xs"}></Space>
-        <Button type={"submit"}>Login</Button>
-      </form>
+      <Button component={"a"} href="/login">
+        login
+      </Button>
     </Container>
   );
 }

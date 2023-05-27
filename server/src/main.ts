@@ -17,7 +17,7 @@ async function bootstrap() {
     auth({
       authRequired: true,
       auth0Logout: false,
-      baseURL: 'http://127.0.0.1:5173',
+      baseURL: process.env.APP_HOST,
       clientID: 'OAjjVtPii74Y0xF36bsJkt2VC5vfuM6K',
       issuerBaseURL: 'https://dev-em3pzy4r5hzjo86l.us.auth0.com',
       secret: process.env.SIGN_SECRET,
