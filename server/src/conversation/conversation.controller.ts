@@ -51,6 +51,10 @@ export class ConversationController {
 
   @Delete(':id')
   async remove(@Param('id') id: string, @User() user: AuthUser) {
+    await this.messageRepository.nativeDelete({
+      conversation: id,
+      user: user.sub,
+    })
     await this.conversationRepository.nativeDelete({ id, user: user.sub })
     return true
   }
