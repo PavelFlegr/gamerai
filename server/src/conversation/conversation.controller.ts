@@ -7,22 +7,29 @@ import { Message } from '../model/entities/message.js'
 import { Conversation } from '../model/entities/conversation.js'
 import { User } from '../user.decorator.js'
 import { AuthUser } from '../model/auth-user.js'
+import { SqlService } from '../sql.service.js'
+import pgvector from 'pgvector/pg'
 
 interface MessageInput {
-  settings: Settings
   content: string
 }
 
 interface ConversationInput {
   id: string
   title: string
+  systemMsg: string
+  context: string
 }
 
 @Controller('api/conversation')
 export class ConversationController {
   messageRepository: EntityRepository<Message>
   conversationRepository: EntityRepository<Conversation>
-  constructor(private chatService: ChatService, private em: EntityManager) {
+  constructor(
+    private chatService: ChatService,
+    private em: EntityManager,
+    private sqlService: SqlService,
+  ) {
     this.conversationRepository = em.getRepository(Conversation)
     this.messageRepository = em.getRepository(Message)
   }
@@ -37,6 +44,16 @@ export class ConversationController {
     )
 
     return conversations
+  }
+
+  @Get(':id')
+  async get(@Param('id') id: string, @User() user: AuthUser) {
+    const conversation = await this.conversationRepository.findOne({
+      id,
+      user: user.sub,
+    })
+
+    return conversation
   }
 
   @Get(':id/messages')
@@ -59,9 +76,20 @@ export class ConversationController {
     return true
   }
 
+  chunkSubstr(str, size): string[] {
+    const numChunks = Math.ceil(str.length / size)
+    const chunks = new Array(numChunks)
+
+    for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+      chunks[i] = str.substr(o, size)
+    }
+
+    return chunks
+  }
+
   @Put()
   async update(@Body() input: ConversationInput, @User() user: AuthUser) {
-    const conversation = await this.conversationRepository.nativeUpdate(
+    await this.conversationRepository.nativeUpdate(
       {
         id: input.id,
         user: user.sub,
@@ -69,7 +97,29 @@ export class ConversationController {
       input,
     )
 
-    return conversation
+    if (input.context) {
+      const contextBlocks = this.chunkSubstr(input.context, 300)
+      const embeddings = await this.chatService.createEmbeddings(contextBlocks)
+
+      await Promise.all(
+        embeddings.data.map(async (embedding) => {
+          await this.sqlService.db.any(
+            'delete from context_embedding where conversation_id = ${conversationId}',
+            { conversationId: input.id },
+          )
+          await this.sqlService.db.any(
+            'insert into context_embedding (conversation_id, embedding, chunk) values (${conversationId}, ${embedding}, ${chunk})',
+            {
+              conversationId: input.id,
+              embedding: embedding.embedding,
+              chunk: contextBlocks[embedding.index],
+            },
+          )
+        }),
+      )
+    }
+
+    return true
   }
 
   @Post()
@@ -97,8 +147,23 @@ export class ConversationController {
     if (!conversation) {
       throw new Error('invalid conversation id')
     }
+    let context: string[]
+    if (conversation.context) {
+      const inputEmbedding = (
+        await this.chatService.createEmbeddings([input.content])
+      ).data[0].embedding
+      context = await this.sqlService.db.map<string>(
+        'select chunk from context_embedding where conversation_id = ${conversationId} order by embedding <=> ${input} LIMIT 5',
+        {
+          input: pgvector.toSql(inputEmbedding),
+          conversationId: conversation.id,
+        },
+        (result) => result.chunk,
+      )
+    }
     const prompt: Prompt = {
-      settings: input.settings,
+      systemMsg: conversation.systemMsg,
+      context: context?.join('\n'),
       messages: [
         ...conversation.messages
           .getItems()

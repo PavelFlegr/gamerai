@@ -26,7 +26,7 @@ import { Message, Settings } from "../model";
 import SettingsComponent from "./settings";
 import AuthGuard from "../auth-guard";
 import MessageComponent from "./message";
-import { Response } from "../model";
+import { Response, Conversation as ConversationModel } from "../model";
 import { useParams } from "react-router-dom";
 
 export default function Conversation() {
@@ -56,13 +56,29 @@ export default function Conversation() {
   useEffect(() => {
     ky.get(`/api/conversation/${id}/messages`)
       .json<Message[]>()
+      .then((messages) => {
+        setMessages(messages);
+        scrollToBottom.start();
+      });
+    ky.get(`/api/conversation/${id}`)
+      .json<ConversationModel>()
       .then((response) => {
-        setMessages(response);
+        setSettings({
+          systemMsg: response.systemMsg,
+          context: response.context,
+        } as Settings);
         scrollToBottom.start();
       });
   }, [id]);
-  const saveSettings = (newSettings: Settings) => {
+  const saveSettings = async (newSettings: Settings) => {
     setSettings(newSettings);
+    await ky.put(`/api/conversation`, {
+      json: {
+        id,
+        systemMsg: newSettings.systemMsg,
+        context: newSettings.context,
+      },
+    });
     close();
   };
   const handleEnter: KeyboardEventHandler<HTMLTextAreaElement> = async (e) => {
@@ -84,7 +100,7 @@ export default function Conversation() {
     try {
       const response = await ky
         .post(`/api/conversation/${id}`, {
-          json: { content: input, settings },
+          json: { content: input },
           timeout: false,
         })
         .json<Response>();

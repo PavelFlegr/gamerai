@@ -24,4 +24,6 @@ export interface Response {
 export interface Conversation {
   title: string;
   id: string;
+  systemMsg: string;
+  context: string;
 }

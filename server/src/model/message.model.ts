@@ -4,7 +4,8 @@ import {
 } from 'openai'
 
 export interface Prompt {
-  settings: Settings
+  systemMsg: string
+  context: string
   messages: ChatCompletionRequestMessage[]
 }
 export interface Settings {

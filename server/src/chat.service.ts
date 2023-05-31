@@ -34,53 +34,32 @@ export class ChatService implements OnModuleInit {
     return chunks
   }
 
+  async createEmbeddings(inputs: string[]) {
+    return (
+      await this.openai.createEmbedding({
+        input: inputs,
+        model: 'text-embedding-ada-002',
+      })
+    ).data
+  }
+
   async sendPrompt(prompt: Prompt): Promise<PromptResponse> {
-    if (prompt.settings.systemMsg !== '') {
+    if (prompt.systemMsg !== '') {
       prompt.messages = [
         ...prompt.messages,
-        { role: 'system', content: prompt.settings.systemMsg },
+        { role: 'system', content: prompt.systemMsg },
       ]
     }
 
     let cost = 0
 
-    if (prompt.settings.context !== '') {
-      const contextBlocks = this.chunkSubstr(prompt.settings.context, 1000)
-
-      const embeddingsResponse = await this.openai.createEmbedding({
-        input: [
-          prompt.messages[prompt.messages.length - 1].content,
-          ...contextBlocks,
-        ],
-        model: 'text-embedding-ada-002',
-      })
-
-      cost += embeddingsResponse.data.usage.total_tokens * 0.0004
-      const [questionEmbedding, ...contextEmbeddings] =
-        embeddingsResponse.data.data
-
-      const similarities = contextEmbeddings
-        .map((embedding) => ({
-          ...embedding,
-          similarity: similarity(
-            embedding.embedding,
-            questionEmbedding.embedding,
-          ),
-        }))
-        .sort((a, b) => b.similarity - a.similarity)
-
-      const context = similarities.map(
-        (embedding) => contextBlocks[embedding.index - 1],
-      )
-
+    if (prompt.context) {
       prompt.messages = [
+        ...prompt.messages,
         {
           role: 'system',
-          content: `Base your response only on the following data:\n${context
-            .slice(0, 5)
-            .join('\n')}`,
+          content: `Your response must be based solely on the following context, do not mention anything that wasn't in here. Start by letting the user know that you will only use the provided information as the source:\n${prompt.context}`,
         },
-        ...prompt.messages,
       ]
     }
 
