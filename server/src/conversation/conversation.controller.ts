@@ -1,14 +1,22 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
-import { Prompt, Settings } from '../model/message.model.js'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common'
+import { Prompt } from '../model/message.model.js'
 import { ChatService } from '../chat.service.js'
-import { EntityManager } from '@mikro-orm/postgresql'
-import { EntityRepository } from '@mikro-orm/core'
-import { Message } from '../model/entities/message.js'
-import { Conversation } from '../model/entities/conversation.js'
 import { User } from '../user.decorator.js'
 import { AuthUser } from '../model/auth-user.js'
-import { SqlService } from '../sql.service.js'
+import { PrismaService } from '../prisma.service.js'
 import pgvector from 'pgvector/pg'
+import { ChatCompletionRequestMessage } from 'openai'
+import { AuthGuard } from '../auth.guard.js'
+import { ContextEmbedding } from '@prisma/client'
 
 interface MessageInput {
   content: string
@@ -22,57 +30,48 @@ interface ConversationInput {
 }
 
 @Controller('api/conversation')
+@UseGuards(AuthGuard)
 export class ConversationController {
-  messageRepository: EntityRepository<Message>
-  conversationRepository: EntityRepository<Conversation>
   constructor(
     private chatService: ChatService,
-    private em: EntityManager,
-    private sqlService: SqlService,
-  ) {
-    this.conversationRepository = em.getRepository(Conversation)
-    this.messageRepository = em.getRepository(Message)
-  }
+    private prisma: PrismaService,
+  ) {}
 
   @Get()
   async list(@User() user: AuthUser) {
-    const conversations = await this.conversationRepository.find(
-      { user: user.sub },
-      {
-        orderBy: { createdAt: 'desc' },
+    return this.prisma.conversation.findMany({
+      where: {
+        userId: user.sub,
       },
-    )
-
-    return conversations
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
   }
 
   @Get(':id')
   async get(@Param('id') id: string, @User() user: AuthUser) {
-    const conversation = await this.conversationRepository.findOne({
-      id,
-      user: user.sub,
+    return this.prisma.conversation.findFirstOrThrow({
+      where: { id, userId: user.sub },
     })
-
-    return conversation
   }
 
   @Get(':id/messages')
   async getMessages(@Param('id') id: string, @User() user: AuthUser) {
-    const messages = await this.messageRepository.find({
-      conversation: id,
-      user: user.sub,
+    return this.prisma.message.findMany({
+      where: {
+        conversationId: id,
+        userId: user.sub,
+      },
     })
-
-    return messages
   }
 
   @Delete(':id')
   async remove(@Param('id') id: string, @User() user: AuthUser) {
-    await this.messageRepository.nativeDelete({
-      conversation: id,
-      user: user.sub,
+    await this.prisma.conversation.deleteMany({
+      where: { id, userId: user.sub },
     })
-    await this.conversationRepository.nativeDelete({ id, user: user.sub })
+
     return true
   }
 
@@ -89,32 +88,27 @@ export class ConversationController {
 
   @Put()
   async update(@Body() input: ConversationInput, @User() user: AuthUser) {
-    await this.conversationRepository.nativeUpdate(
-      {
-        id: input.id,
-        user: user.sub,
-      },
-      input,
-    )
+    await this.prisma.conversation.updateMany({
+      where: { id: input.id, userId: user.sub },
+      data: input,
+    })
 
     if (input.context) {
       const contextBlocks = this.chunkSubstr(input.context, 300)
       const embeddings = await this.chatService.createEmbeddings(contextBlocks)
 
+      await this.prisma.contextEmbedding.deleteMany({
+        where: {
+          conversationId: input.id,
+        },
+      })
       await Promise.all(
         embeddings.data.map(async (embedding) => {
-          await this.sqlService.db.any(
-            'delete from context_embedding where conversation_id = ${conversationId}',
-            { conversationId: input.id },
-          )
-          await this.sqlService.db.any(
-            'insert into context_embedding (conversation_id, embedding, chunk) values (${conversationId}, ${embedding}, ${chunk})',
-            {
-              conversationId: input.id,
-              embedding: embedding.embedding,
-              chunk: contextBlocks[embedding.index],
-            },
-          )
+          await this.prisma
+            .$executeRaw`insert into "ContextEmbedding" ("conversationId", embedding, chunk) values (
+            ${input.id}::uuid,
+            ${embedding.embedding},
+            ${contextBlocks[embedding.index]})`
         }),
       )
     }
@@ -124,13 +118,12 @@ export class ConversationController {
 
   @Post()
   async create(@Body() input: ConversationInput, @User() user: AuthUser) {
-    const conversation = this.conversationRepository.create({
-      ...input,
-      user: user.sub,
+    return this.prisma.conversation.create({
+      data: {
+        ...input,
+        user: { connect: { id: user.sub } },
+      },
     })
-    await this.em.persistAndFlush(conversation)
-
-    return conversation
   }
   @Post(':id')
   async chat(
@@ -138,53 +131,53 @@ export class ConversationController {
     @Body() input: MessageInput,
     @User() user: AuthUser,
   ) {
-    const conversation = await this.conversationRepository.findOne(
-      { id, user: user.sub },
-      {
-        populate: ['messages'],
-      },
-    )
-    if (!conversation) {
-      throw new Error('invalid conversation id')
-    }
-    let context: string[]
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { id, userId: user.sub },
+      include: { messages: true },
+    })
+    let context: ContextEmbedding[]
     if (conversation.context) {
       const inputEmbedding = (
         await this.chatService.createEmbeddings([input.content])
       ).data[0].embedding
-      context = await this.sqlService.db.map<string>(
-        'select chunk from context_embedding where conversation_id = ${conversationId} order by embedding <=> ${input} LIMIT 5',
-        {
-          input: pgvector.toSql(inputEmbedding),
-          conversationId: conversation.id,
-        },
-        (result) => result.chunk,
-      )
+      context = await this.prisma
+        .$queryRaw`select chunk from "ContextEmbedding" where "conversationId" = ${id}::uuid order by embedding <=>
+        ${pgvector.toSql(inputEmbedding)}::vector LIMIT 5`
     }
     const prompt: Prompt = {
       systemMsg: conversation.systemMsg,
-      context: context?.join('\n'),
+      context: context?.map((row) => row.chunk).join('\n'),
       messages: [
-        ...conversation.messages
-          .getItems()
-          .map((msg) => ({ content: msg.content, role: msg.role })),
+        ...conversation.messages.map(
+          (msg) =>
+            ({
+              content: msg.content,
+              role: msg.role,
+            } as ChatCompletionRequestMessage),
+        ),
         { content: input.content, role: 'user' },
       ],
     }
     const response = await this.chatService.sendPrompt(prompt)
-    const message1 = this.messageRepository.create({
-      content: input.content,
-      role: 'user',
-      cost: response.promptCost,
-      user: user.sub,
+    await this.prisma.conversation.update({
+      where: { id },
+      data: {
+        messages: {
+          create: [
+            {
+              content: input.content,
+              role: 'user',
+              cost: response.promptCost,
+              user: { connect: { id: user.sub } },
+            },
+            {
+              ...response.message,
+              user: { connect: { id: user.sub } },
+            },
+          ],
+        },
+      },
     })
-    const message2 = this.messageRepository.create({
-      ...response.message,
-      user: user.sub,
-    })
-    conversation.messages.add(message1, message2)
-
-    await this.em.persistAndFlush(conversation)
 
     return response
   }

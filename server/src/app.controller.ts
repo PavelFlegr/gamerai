@@ -3,9 +3,7 @@ import { AppService } from './app.service.js'
 import { JSDOM } from 'jsdom'
 import { Readability } from '@mozilla/readability'
 import { gotScraping } from 'got-scraping'
-import { ChatService } from './chat.service.js'
-import { EntityManager } from '@mikro-orm/postgresql'
-import { Response, Request } from 'express'
+import { Request } from 'express'
 
 interface PromptDtoIn {
   instruction: string
@@ -16,11 +14,7 @@ interface PromptDtoIn {
 }
 @Controller()
 export class AppController {
-  constructor(
-    private appService: AppService,
-    private chatService: ChatService,
-    private em: EntityManager,
-  ) {}
+  constructor(private appService: AppService) {}
 
   @Get('api/me')
   async me(@Req() request: Request) {

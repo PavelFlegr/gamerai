@@ -1,21 +1,18 @@
 import { Prompt } from './model/message.model.js'
-import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai'
+import { Configuration, OpenAIApi } from 'openai'
 import process from 'process'
-import similarity from 'compute-cosine-similarity'
 import { Injectable, OnModuleInit } from '@nestjs/common'
-import { EntityManager } from '@mikro-orm/postgresql'
-import { Message } from './model/entities/message.js'
-
+import { Message } from '@prisma/client'
 export interface PromptResponse {
   promptCost: number
-  message: Partial<Message>
+  message: Message
 }
 
 @Injectable()
 export class ChatService implements OnModuleInit {
   openai: OpenAIApi
 
-  constructor(em: EntityManager) {}
+  constructor() {}
 
   onModuleInit() {
     const configuration = new Configuration({
@@ -76,7 +73,7 @@ export class ChatService implements OnModuleInit {
         content: response.data.choices[0].message.content,
         role: 'assistant',
         cost: (completion_tokens * 0.06) / 1000,
-      },
+      } as Message,
     }
   }
 }
