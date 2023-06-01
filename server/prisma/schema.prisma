@@ -25,6 +25,8 @@ model Conversation {
   context           String             @default("")
   userId            String             @db.VarChar(255)
   contextEmbeddings ContextEmbedding[]
+  blockCount        Int                @default(10)
+  blockSize         Int                @default(500)
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade, map: "conversation_user_id_foreign")
   messages          Message[]
 }

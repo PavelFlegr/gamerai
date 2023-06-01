@@ -2,6 +2,8 @@ export interface Settings {
   model: string;
   systemMsg: string;
   context: string;
+  blockCount: number;
+  blockSize: number;
 }
 
 export interface User {
@@ -26,4 +28,6 @@ export interface Conversation {
   id: string;
   systemMsg: string;
   context: string;
+  blockCount: number;
+  blockSize: number;
 }

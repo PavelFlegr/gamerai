@@ -55,7 +55,7 @@ export class ChatService implements OnModuleInit {
         ...prompt.messages,
         {
           role: 'system',
-          content: `Your response must be based solely on the following context, do not mention anything that wasn't in here. Start by letting the user know that you will only use the provided information as the source:\n${prompt.context}`,
+          content: `Here is some context that should help you answer the users question:\n${prompt.context}`,
         },
       ]
     }

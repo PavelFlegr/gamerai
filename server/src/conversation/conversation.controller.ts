@@ -27,6 +27,8 @@ interface ConversationInput {
   title: string
   systemMsg: string
   context: string
+  blockSize: number
+  blockCount: number
 }
 
 @Controller('api/conversation')
@@ -94,7 +96,7 @@ export class ConversationController {
     })
 
     if (input.context) {
-      const contextBlocks = this.chunkSubstr(input.context, 300)
+      const contextBlocks = this.chunkSubstr(input.context, input.blockSize)
       const embeddings = await this.chatService.createEmbeddings(contextBlocks)
 
       await this.prisma.contextEmbedding.deleteMany({
@@ -142,7 +144,8 @@ export class ConversationController {
       ).data[0].embedding
       context = await this.prisma
         .$queryRaw`select chunk from "ContextEmbedding" where "conversationId" = ${id}::uuid order by embedding <=>
-        ${pgvector.toSql(inputEmbedding)}::vector LIMIT 5`
+        ${pgvector.toSql(inputEmbedding)}::vector LIMIT 
+        ${conversation.blockCount}`
     }
     const prompt: Prompt = {
       systemMsg: conversation.systemMsg,

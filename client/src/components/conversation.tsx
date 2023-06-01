@@ -22,7 +22,7 @@ import {
   Send,
   Settings as SettingsIcon,
 } from "tabler-icons-react";
-import { Message, Settings } from "../model";
+import { Message } from "../model";
 import SettingsComponent from "./settings";
 import AuthGuard from "../auth-guard";
 import MessageComponent from "./message";
@@ -30,10 +30,13 @@ import { Response, Conversation as ConversationModel } from "../model";
 import { useParams } from "react-router-dom";
 
 export default function Conversation() {
-  const [settings, setSettings] = useState<Settings>({
+  const [settings, setSettings] = useState<ConversationModel>({
     systemMsg: "",
     context: "",
-    model: "gpt-4",
+    blockSize: 500,
+    blockCount: 10,
+    title: "New conversation",
+    id: "",
   });
   const { id } = useParams();
   const [opened, { open, close }] = useDisclosure(false);
@@ -63,21 +66,14 @@ export default function Conversation() {
     ky.get(`/api/conversation/${id}`)
       .json<ConversationModel>()
       .then((response) => {
-        setSettings({
-          systemMsg: response.systemMsg,
-          context: response.context,
-        } as Settings);
+        setSettings(response);
         scrollToBottom.start();
       });
   }, [id]);
-  const saveSettings = async (newSettings: Settings) => {
+  const saveSettings = async (newSettings: ConversationModel) => {
     setSettings(newSettings);
     await ky.put(`/api/conversation`, {
-      json: {
-        id,
-        systemMsg: newSettings.systemMsg,
-        context: newSettings.context,
-      },
+      json: newSettings,
     });
     close();
   };
