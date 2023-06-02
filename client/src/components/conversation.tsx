@@ -143,6 +143,7 @@ export default function Conversation() {
                 minRows={5}
                 value={input}
                 onChange={setInput}
+                placeholder={"Send a message"}
               />
               <Space h="xs" />
               <Flex justify="space-between">

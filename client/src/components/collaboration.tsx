@@ -1,4 +1,4 @@
-import { KeyboardEventHandler, useEffect, useState } from "react";
+import React, { KeyboardEventHandler, useEffect, useState } from "react";
 import ky from "ky";
 import { useParams } from "react-router-dom";
 import {
@@ -14,7 +14,7 @@ import {
   Textarea,
   ThemeIcon,
 } from "@mantine/core";
-import { useInputState } from "@mantine/hooks";
+import { useInputState, useTimeout } from "@mantine/hooks";
 import AuthGuard from "../auth-guard";
 import { Collaboration as CollaborationModel } from "../model";
 import { CurrencyDollar, Send } from "tabler-icons-react";
@@ -40,6 +40,19 @@ export default function Collaboration() {
         setCollaboration(collaboration);
       });
   }, [id]);
+
+  const saveDocument = useTimeout(
+    async () =>
+      await ky.put(`/api/collaboration`, {
+        json: { document, id },
+      }),
+    3000
+  );
+
+  const updateDocument = (e: React.ChangeEvent) => {
+    setDocument(e);
+    saveDocument.start();
+  };
 
   const handleEnter: KeyboardEventHandler<HTMLTextAreaElement> = async (e) => {
     if (e.key === "Enter" && !e.getModifierState("Shift")) {
@@ -72,13 +85,18 @@ export default function Collaboration() {
           <Stack h={"100%"} justify="space-between" align={"stretch"}>
             <Textarea
               autosize
+              readOnly={responding}
               minRows={30}
               style={{ overflow: "scroll" }}
               value={document}
-              onChange={setDocument}
+              onChange={updateDocument}
+              placeholder={
+                "Start writing or send an instruction to your assistant to do it for you"
+              }
             ></Textarea>
             <Box>
               <Textarea
+                placeholder={"Tell your assistant what you need"}
                 onKeyDown={handleEnter}
                 value={input}
                 onChange={setInput}
