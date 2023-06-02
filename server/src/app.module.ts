@@ -9,6 +9,7 @@ import { ConversationController } from './conversation/conversation.controller.j
 import { PrismaService } from './prisma.service.js'
 import { AuthGuard } from './auth.guard.js'
 import { LoggerModule } from 'nestjs-pino'
+import { CollaborationController } from './collaboration/collaboration.controller.js'
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
@@ -17,7 +18,7 @@ import { LoggerModule } from 'nestjs-pino'
       pinoHttp: [{ transport: { target: 'pino-pretty' } }, null],
     }),
   ],
-  controllers: [AppController, ConversationController],
+  controllers: [AppController, ConversationController, CollaborationController],
   providers: [AppService, AppGateway, ChatService, PrismaService, AuthGuard],
 })
 export class AppModule {

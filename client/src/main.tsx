@@ -1,14 +1,19 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { Button, Container, MantineProvider } from "@mantine/core";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
+import { MantineProvider } from "@mantine/core";
 import App2 from "./pages/App2";
 import App3 from "./pages/App3";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Conversation from "./components/conversation";
 import Index from "./components";
+import Collaboration from "./components/collaboration";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +28,10 @@ const router = createBrowserRouter([
         path: "conversation/:id",
         element: <Conversation />,
       },
+      {
+        path: "collaboration/:id",
+        element: <Collaboration />,
+      },
     ],
   },
   {
@@ -36,6 +45,10 @@ const router = createBrowserRouter([
   {
     path: "login",
     element: <Login />,
+  },
+  {
+    path: "*",
+    element: <Navigate to={"/"}></Navigate>,
   },
 ]);
 

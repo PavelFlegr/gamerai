@@ -40,6 +40,29 @@ export class ChatService implements OnModuleInit {
     ).data
   }
 
+  async getCollaborationResponse(document: string, instruction: string) {
+    const response = await this.openai.createChatCompletion({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a writing assistant. Your task is to collaborate on a document together with a user. Respond with full document modified according to users instructions, keep in mind that your response will replace the current document, make sure nothing that the user didn't specify is removed\nCurrent document:\n${document}`,
+        },
+        {
+          role: 'user',
+          content: instruction,
+        },
+      ],
+    })
+
+    const { prompt_tokens, completion_tokens } = response.data.usage
+
+    return {
+      cost: (prompt_tokens * 0.03) / 1000 + (completion_tokens * 0.06) / 1000,
+      document: response.data.choices[0].message.content,
+    }
+  }
+
   async sendPrompt(prompt: Prompt): Promise<PromptResponse> {
     if (prompt.systemMsg !== '') {
       prompt.messages = [

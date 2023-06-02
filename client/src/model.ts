@@ -31,3 +31,10 @@ export interface Conversation {
   blockCount: number;
   blockSize: number;
 }
+
+export interface Collaboration {
+  id: string;
+  title: string;
+  document: string;
+  cost: number;
+}

@@ -1,10 +1,10 @@
-import { Button } from "@mantine/core";
+import { Button, ButtonProps } from "@mantine/core";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import ky from "ky";
 import { Conversation } from "../model";
 
-export default function StartConversation() {
+export default function StartConversation(props: ButtonProps) {
   const navigate = useNavigate();
   const startConversation = async () => {
     const conversation = await ky
@@ -12,5 +12,9 @@ export default function StartConversation() {
       .json<Conversation>();
     navigate(`/conversation/${conversation.id}`);
   };
-  return <Button onClick={startConversation}>Start conversation</Button>;
+  return (
+    <Button {...props} onClick={startConversation}>
+      Start conversation
+    </Button>
+  );
 }
