@@ -7,7 +7,7 @@ import { Message as MessageInterface } from "../model";
 
 export default function Message(props: { message: MessageInterface }) {
   return (
-    <>
+    <div style={{ maxWidth: 890 }}>
       <Text fz="xs">
         {props.message.role} - {props.message.cost}$
       </Text>
@@ -38,6 +38,6 @@ export default function Message(props: { message: MessageInterface }) {
         {props.message.content}
       </ReactMarkdown>
       <Divider />
-    </>
+    </div>
   );
 }
