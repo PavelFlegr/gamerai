@@ -82,12 +82,11 @@ export default function Collaboration() {
     <AuthGuard>
       <Container h={"100%"} w={1000} mx="auto">
         <Card h={"100%"} shadow="sm">
-          <Stack h={"100%"} justify="space-between" align={"stretch"}>
+          <Stack h={"100%"} justify="end" align={"stretch"}>
             <Textarea
               autosize
               readOnly={responding}
-              minRows={30}
-              style={{ overflow: "scroll" }}
+              style={{ overflow: "scroll", flexGrow: 1 }}
               value={document}
               onChange={updateDocument}
               placeholder={
