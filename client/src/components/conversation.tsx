@@ -120,10 +120,10 @@ export default function Conversation() {
           settings={settings}
         ></SettingsComponent>
       </Modal>
-      <Container w={1000} mx="auto">
-        <Card h={"100vh"} shadow="sm">
+      <Container h={"100%"} w={1000} mx="auto">
+        <Card h={"100%"} shadow="sm">
           <Stack h={"100%"} justify="space-between">
-            <ScrollArea viewportRef={viewport}>
+            <ScrollArea style={{ flexGrow: 1 }} viewportRef={viewport}>
               {messages.map((message, i) => (
                 <MessageComponent key={i} message={message}></MessageComponent>
               ))}

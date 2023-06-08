@@ -80,8 +80,8 @@ export default function Collaboration() {
 
   return (
     <AuthGuard>
-      <Container w={1000} mx="auto">
-        <Card h={"100vh"} shadow="sm">
+      <Container h={"100%"} w={1000} mx="auto">
+        <Card h={"100%"} shadow="sm">
           <Stack h={"100%"} justify="space-between" align={"stretch"}>
             <Textarea
               autosize

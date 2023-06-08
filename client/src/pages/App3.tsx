@@ -6,6 +6,12 @@ import {
   ActionIcon,
   Button,
   Tabs,
+  AppShell,
+  Header,
+  Anchor,
+  Container,
+  Stack,
+  Flex,
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
@@ -225,6 +231,7 @@ export default function App3() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [collaborations, setCollaborations] = useState<Collaboration[]>([]);
 
+  const navigate = useNavigate();
   const { id } = useParams();
 
   const reloadConversations = () => {
@@ -247,16 +254,20 @@ export default function App3() {
     reloadConversations();
     reloadCollaborations();
   }, [id]);
+
   return (
     <AuthGuard>
-      <div style={{ display: "flex" }}>
-        <Navbar width={{ base: 200 }}>
+      <Flex>
+        <Navbar
+          style={{ flexGrow: 0, overflow: "hidden", minWidth: 200 }}
+          w={200}
+        >
           <Tabs defaultValue={"chat"} variant={"outline"}>
             <Tabs.List grow>
               <Tabs.Tab value={"chat"}>Chat</Tabs.Tab>
               <Tabs.Tab value={"collab"}>Collab</Tabs.Tab>
             </Tabs.List>
-            <Tabs.Panel value={"chat"}>
+            <Tabs.Panel h={"100vh"} value={"chat"}>
               <StartConversation style={{ width: "100%" }} />
               {conversations.map((conversation) => (
                 <ConversationItem
@@ -280,8 +291,23 @@ export default function App3() {
             </Tabs.Panel>
           </Tabs>
         </Navbar>
-        <Outlet />
-      </div>
+        <div style={{ flexGrow: 1, height: "100vh" }}>
+          <Stack h={"100%"}>
+            <Header height={37} style={{ height: 37 }}>
+              <Button
+                onClick={() => navigate("/database")}
+                variant={"subtle"}
+                component={"button"}
+              >
+                Database
+              </Button>
+            </Header>
+            <div style={{ flexGrow: 1, overflow: "hidden" }}>
+              <Outlet />
+            </div>
+          </Stack>
+        </div>
+      </Flex>
     </AuthGuard>
   );
 }
