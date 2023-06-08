@@ -10,10 +10,11 @@ import {
 } from '@nestjs/common'
 import { PrismaService } from '../prisma.service.js'
 import { AuthGuard } from '../auth.guard.js'
-import { ChatService } from '../chat.service.js'
+import { ChatService } from '../services/chat.service.js'
 import { User } from '../user.decorator.js'
 import { AuthUser } from '../model/auth-user.js'
 import { Collaboration } from '@prisma/client'
+import { OpenaiService } from '../services/openai.service.js'
 
 interface CollaborationInput {
   document: string
@@ -29,7 +30,7 @@ interface Instruction {
 export class CollaborationController {
   constructor(
     private prisma: PrismaService,
-    private chatService: ChatService,
+    private openaiService: OpenaiService,
   ) {}
 
   @Get()
@@ -80,6 +81,24 @@ export class CollaborationController {
     })
   }
 
+  async getCollaborationResponse(document: string, instruction: string) {
+    const response = await this.openaiService.getChatCompletion([
+      {
+        role: 'system',
+        content: `You are a writing assistant. Your task is to collaborate on a document together with a user. Respond with full document modified according to users instructions, keep in mind that your response will replace the current document, make sure nothing that the user didn't specify is removed\nCurrent document:\n${document}`,
+      },
+      {
+        role: 'user',
+        content: instruction,
+      },
+    ])
+
+    return {
+      cost: response.promptCost + response.responseCost,
+      document: response.content,
+    }
+  }
+
   @Post(':id')
   async modify(
     @Param('id') id: string,
@@ -93,7 +112,7 @@ export class CollaborationController {
       },
     })
 
-    const response = await this.chatService.getCollaborationResponse(
+    const response = await this.getCollaborationResponse(
       input.instruction,
       collaboration.document,
     )

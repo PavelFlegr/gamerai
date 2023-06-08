@@ -1,4 +1,4 @@
-import { Prompt } from './model/message.model.js'
+import { Prompt } from '../model/message.model.js'
 import { Configuration, OpenAIApi } from 'openai'
 import process from 'process'
 import { Injectable, OnModuleInit } from '@nestjs/common'

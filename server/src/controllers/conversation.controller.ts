@@ -9,14 +9,15 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Prompt } from '../model/message.model.js'
-import { ChatService } from '../chat.service.js'
+import { PromptResponse } from '../services/chat.service.js'
 import { User } from '../user.decorator.js'
 import { AuthUser } from '../model/auth-user.js'
 import { PrismaService } from '../prisma.service.js'
 import pgvector from 'pgvector/pg'
 import { ChatCompletionRequestMessage } from 'openai'
 import { AuthGuard } from '../auth.guard.js'
-import { ContextEmbedding } from '@prisma/client'
+import { ContextEmbedding, Message } from '@prisma/client'
+import { EmbeddingResponse, OpenaiService } from '../services/openai.service.js'
 
 interface MessageInput {
   content: string
@@ -35,7 +36,7 @@ interface ConversationInput {
 @UseGuards(AuthGuard)
 export class ConversationController {
   constructor(
-    private chatService: ChatService,
+    private openaiService: OpenaiService,
     private prisma: PrismaService,
   ) {}
 
@@ -97,7 +98,7 @@ export class ConversationController {
 
     if (input.context) {
       const contextBlocks = this.chunkSubstr(input.context, input.blockSize)
-      const embeddings = await this.chatService.createEmbeddings(contextBlocks)
+      const response = await this.openaiService.getEmbeddings(contextBlocks)
 
       await this.prisma.contextEmbedding.deleteMany({
         where: {
@@ -105,12 +106,12 @@ export class ConversationController {
         },
       })
       await Promise.all(
-        embeddings.data.map(async (embedding) => {
+        response.embeddings.map(async (embedding) => {
           await this.prisma
             .$executeRaw`insert into "ContextEmbedding" ("conversationId", embedding, chunk) values (
             ${input.id}::uuid,
             ${embedding.embedding},
-            ${contextBlocks[embedding.index]})`
+            ${embedding.input})`
         }),
       )
     }
@@ -127,6 +128,38 @@ export class ConversationController {
       },
     })
   }
+
+  async sendPrompt(prompt: Prompt): Promise<PromptResponse> {
+    if (prompt.systemMsg !== '') {
+      prompt.messages = [
+        ...prompt.messages,
+        { role: 'system', content: prompt.systemMsg },
+      ]
+    }
+
+    if (prompt.context) {
+      prompt.messages = [
+        ...prompt.messages,
+        {
+          role: 'system',
+          content: `Here is some context that should help you answer the users question:\n${prompt.context}`,
+        },
+      ]
+    }
+
+    const { promptCost, content, responseCost } =
+      await this.openaiService.getChatCompletion(prompt.messages)
+
+    return {
+      promptCost: promptCost,
+      message: {
+        content: content,
+        role: 'assistant',
+        cost: responseCost,
+      } as Message,
+    }
+  }
+
   @Post(':id')
   async chat(
     @Param('id') id: string,
@@ -138,13 +171,12 @@ export class ConversationController {
       include: { messages: true },
     })
     let context: ContextEmbedding[]
+    let inputEmbedding: EmbeddingResponse
     if (conversation.context) {
-      const inputEmbedding = (
-        await this.chatService.createEmbeddings([input.content])
-      ).data[0].embedding
+      inputEmbedding = await this.openaiService.getEmbeddings([input.content])
       context = await this.prisma
         .$queryRaw`select chunk from "ContextEmbedding" where "conversationId" = ${id}::uuid order by embedding <=>
-        ${pgvector.toSql(inputEmbedding)}::vector LIMIT 
+        ${pgvector.toSql(inputEmbedding.embeddings[0].embedding)}::vector LIMIT 
         ${conversation.blockCount}`
     }
     const prompt: Prompt = {
@@ -161,7 +193,7 @@ export class ConversationController {
         { content: input.content, role: 'user' },
       ],
     }
-    const response = await this.chatService.sendPrompt(prompt)
+    const response = await this.sendPrompt(prompt)
     await this.prisma.conversation.update({
       where: { id },
       data: {
@@ -170,7 +202,7 @@ export class ConversationController {
             {
               content: input.content,
               role: 'user',
-              cost: response.promptCost,
+              cost: response.promptCost + (inputEmbedding?.cost ?? 0),
               user: { connect: { id: user.sub } },
             },
             {
