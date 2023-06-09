@@ -18,6 +18,7 @@ import { ChatCompletionRequestMessage } from 'openai'
 import { AuthGuard } from '../auth.guard.js'
 import { ContextEmbedding, Message } from '@prisma/client'
 import { EmbeddingResponse, OpenaiService } from '../services/openai.service.js'
+import { chunkSubstr } from '../utils.js'
 
 interface MessageInput {
   content: string
@@ -78,17 +79,6 @@ export class ConversationController {
     return true
   }
 
-  chunkSubstr(str, size): string[] {
-    const numChunks = Math.ceil(str.length / size)
-    const chunks = new Array(numChunks)
-
-    for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
-      chunks[i] = str.substr(o, size)
-    }
-
-    return chunks
-  }
-
   @Put()
   async update(@Body() input: ConversationInput, @User() user: AuthUser) {
     await this.prisma.conversation.updateMany({
@@ -97,7 +87,7 @@ export class ConversationController {
     })
 
     if (input.context) {
-      const contextBlocks = this.chunkSubstr(input.context, input.blockSize)
+      const contextBlocks = chunkSubstr(input.context, input.blockSize)
       const response = await this.openaiService.getEmbeddings(contextBlocks)
 
       await this.prisma.contextEmbedding.deleteMany({

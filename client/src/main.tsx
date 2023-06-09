@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import Conversation from "./components/conversation";
 import Index from "./components";
 import Collaboration from "./components/collaboration";
+import { Database } from "./components/database";
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
       {
         path: "collaboration/:id",
         element: <Collaboration />,
+      },
+      {
+        path: "database",
+        element: <Database />,
       },
     ],
   },

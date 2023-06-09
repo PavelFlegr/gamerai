@@ -11,6 +11,7 @@ import { AuthGuard } from './auth.guard.js'
 import { LoggerModule } from 'nestjs-pino'
 import { CollaborationController } from './controllers/collaboration.controller.js'
 import { OpenaiService } from './services/openai.service.js'
+import { FileController } from './controllers/file.controller.js'
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
@@ -19,7 +20,12 @@ import { OpenaiService } from './services/openai.service.js'
       pinoHttp: [{ transport: { target: 'pino-pretty' } }, null],
     }),
   ],
-  controllers: [AppController, ConversationController, CollaborationController],
+  controllers: [
+    AppController,
+    ConversationController,
+    CollaborationController,
+    FileController,
+  ],
   providers: [
     AppService,
     AppGateway,
