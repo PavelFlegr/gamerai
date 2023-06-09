@@ -86,7 +86,7 @@ export default function Collaboration() {
             <Textarea
               autosize
               readOnly={responding}
-              style={{ overflow: "scroll", flexGrow: 1 }}
+              style={{ overflow: "auto", flexGrow: 1, height: "100%" }}
               value={document}
               onChange={updateDocument}
               placeholder={
