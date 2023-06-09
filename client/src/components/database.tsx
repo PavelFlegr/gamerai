@@ -1,16 +1,21 @@
 import {
+  ActionIcon,
   Anchor,
   Button,
   Container,
   FileButton,
   Flex,
+  Group,
+  SimpleGrid,
   Space,
   Stack,
+  Table,
   TextInput,
 } from "@mantine/core";
 import ky from "ky";
 import { useInputState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
+import { IconHttpDelete } from "@tabler/icons-react";
 
 interface FileModel {
   id: string;
@@ -35,12 +40,15 @@ export function Database() {
       .json<FileModel[]>()
       .then((res) => setFiles(res));
   }, []);
-  const uploadFile = (file: File) => {
+  const uploadFile = async (file: File) => {
     const formData = new FormData();
     formData.set("file", file);
-    ky.post("/api/file", {
-      body: formData,
-    });
+    const response = await ky
+      .post("/api/file", {
+        body: formData,
+      })
+      .json<FileModel>();
+    setFiles([...files, response]);
   };
 
   const search = async () => {
@@ -54,6 +62,11 @@ export function Database() {
   const getFile = async (fileId: string) => {
     const file = await ky.get(`/api/file/${fileId}`).json<FileModel>();
     setFile(file);
+  };
+
+  const deleteFile = async (fileId: string) => {
+    const file = await ky.delete(`/api/file/${fileId}`).json<FileModel>();
+    setFiles(files.filter((file) => file.id !== fileId));
   };
 
   return (
@@ -79,7 +92,26 @@ export function Database() {
       })}
       <Space h={20} />
       <h2>{file?.name}</h2>
-      {file?.content}
+      <div style={{ whiteSpace: "pre-wrap" }}>{file?.content}</div>
+
+      <Space h={20} />
+      <h2>All Files</h2>
+      <Table style={{ width: 300 }}>
+        {files.map((file) => {
+          return (
+            <tr>
+              <td>
+                <Anchor onClick={() => getFile(file.id)}>{file.name}</Anchor>
+              </td>
+              <td>
+                <ActionIcon onClick={() => deleteFile(file.id)} color={"red"}>
+                  <IconHttpDelete></IconHttpDelete>
+                </ActionIcon>
+              </td>
+            </tr>
+          );
+        })}
+      </Table>
     </Container>
   );
 }
