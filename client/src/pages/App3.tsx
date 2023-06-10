@@ -302,7 +302,7 @@ export default function App3() {
                 Database
               </Button>
             </Header>
-            <div style={{ flexGrow: 1, overflow: "hidden" }}>
+            <div style={{ flexGrow: 1, overflow: "auto" }}>
               <Outlet />
             </div>
           </Stack>
