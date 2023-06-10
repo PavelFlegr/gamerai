@@ -113,7 +113,7 @@ export default function Conversation() {
   };
 
   return (
-    <AuthGuard>
+    <>
       <Modal opened={opened} onClose={close} title="Settings">
         <SettingsComponent
           saveSettings={saveSettings}
@@ -177,6 +177,6 @@ export default function Conversation() {
           </Stack>
         </Card>
       </Container>
-    </AuthGuard>
+    </>
   );
 }

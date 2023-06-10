@@ -1,13 +1,13 @@
-import { NestFactory } from '@nestjs/core'
+import { HttpAdapterHost, NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module.js'
 import { json } from 'express'
 import process from 'process'
 import { auth } from 'express-openid-connect'
-import { Logger } from 'nestjs-pino'
+import { AllExceptionsFilter } from './error.filter.js'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true })
-  app.useLogger(app.get(Logger))
+  app.useGlobalFilters(new AllExceptionsFilter(app.get(HttpAdapterHost)))
   app.use(
     auth({
       authRequired: true,

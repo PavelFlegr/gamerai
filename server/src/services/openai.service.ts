@@ -63,19 +63,29 @@ export class OpenaiService implements OnModuleInit {
     }
   }
   async getEmbeddings(inputs: string[]): Promise<EmbeddingResponse> {
-    const response = await this.openai.createEmbedding({
-      input: inputs,
-      model: 'text-embedding-ada-002',
-    })
+    const perRequest = 1000
+    const requests = Math.ceil(inputs.length / perRequest)
+    const embeddings = []
+    let tokens = 0
+    for (let i = 0; i < requests; i++) {
+      const response = await this.openai.createEmbedding({
+        input: inputs.slice(i * perRequest, (i + 1) * perRequest),
+        model: 'text-embedding-ada-002',
+      })
 
-    const embeddings = response.data.data.map((response) => ({
-      input: inputs[response.index],
-      embedding: response.embedding,
-    }))
+      embeddings.push(
+        ...response.data.data.map((response) => ({
+          input: inputs[response.index + i * perRequest],
+          embedding: response.embedding,
+        })),
+      )
+
+      tokens += response.data.usage.total_tokens
+    }
 
     return {
       embeddings,
-      cost: response.data.usage.total_tokens,
+      cost: tokens * 0.0000004,
     }
   }
 }

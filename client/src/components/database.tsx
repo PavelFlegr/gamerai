@@ -6,6 +6,7 @@ import {
   FileButton,
   Flex,
   Group,
+  ScrollArea,
   SimpleGrid,
   Space,
   Stack,
@@ -29,7 +30,7 @@ interface SearchResult {
   chunk: string;
 }
 
-export function Database() {
+export default function Database() {
   const [query, setQuery] = useInputState("");
   const [files, setFiles] = useState<FileModel[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -46,6 +47,7 @@ export function Database() {
     const response = await ky
       .post("/api/file", {
         body: formData,
+        timeout: false,
       })
       .json<FileModel>();
     setFiles([...files, response]);
@@ -53,7 +55,7 @@ export function Database() {
 
   const search = async () => {
     const results = await ky
-      .post("/api/file/search", { json: { query } })
+      .post("/api/file/search", { json: { query }, timeout: false })
       .json<SearchResult[]>();
 
     setSearchResults(results);
@@ -91,10 +93,6 @@ export function Database() {
         );
       })}
       <Space h={20} />
-      <h2>{file?.name}</h2>
-      <div style={{ whiteSpace: "pre-wrap" }}>{file?.content}</div>
-
-      <Space h={20} />
       <h2>All Files</h2>
       <Table style={{ width: 300 }}>
         {files.map((file) => {
@@ -112,6 +110,9 @@ export function Database() {
           );
         })}
       </Table>
+      <Space h={20} />
+      <h2>{file?.name}</h2>
+      <div style={{ whiteSpace: "pre-wrap" }}>{file?.content}</div>
     </Container>
   );
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import {
@@ -11,10 +11,10 @@ import App2 from "./pages/App2";
 import App3 from "./pages/App3";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import Conversation from "./components/conversation";
 import Index from "./components";
-import Collaboration from "./components/collaboration";
-import { Database } from "./components/database";
+const Collaboration = lazy(() => import("./components/collaboration"));
+const Conversation = lazy(() => import("./components/conversation"));
+const Database = lazy(() => import("./components/database"));
 
 const router = createBrowserRouter([
   {
@@ -64,7 +64,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       withGlobalStyles
       withNormalizeCSS
     >
-      <RouterProvider router={router} />
+      <Suspense fallback={"blabalbal"}>
+        <RouterProvider router={router} />
+      </Suspense>
     </MantineProvider>
   </React.StrictMode>
 );

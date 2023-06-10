@@ -79,7 +79,7 @@ export default function Collaboration() {
   };
 
   return (
-    <AuthGuard>
+    <>
       <Container h={"100%"} w={1000} mx="auto">
         <Card h={"100%"} shadow="sm">
           <Stack h={"100%"} justify="end" align={"stretch"}>
@@ -130,6 +130,6 @@ export default function Collaboration() {
           </Stack>
         </Card>
       </Container>
-    </AuthGuard>
+    </>
   );
 }
