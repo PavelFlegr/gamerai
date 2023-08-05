@@ -43,6 +43,7 @@
     "pgvector": "^0.1.4",
     "pino-http": "^8.3.3",
     "pino-pretty": "^10.0.0",
+    "replicate": "^0.14.1",
     "rxjs": "^7.2.0"
   },
   "devDependencies": {
