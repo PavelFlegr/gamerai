@@ -19,6 +19,7 @@ import { AuthGuard } from '../auth.guard.js'
 import { ContextEmbedding, Message } from '@prisma/client'
 import { EmbeddingResponse, OpenaiService } from '../services/openai.service.js'
 import { chunkSubstr } from '../utils.js'
+import { ReplicateService } from '../services/replicate.service.js'
 
 interface MessageInput {
   content: string
@@ -38,6 +39,7 @@ interface ConversationInput {
 export class ConversationController {
   constructor(
     private openaiService: OpenaiService,
+    private replicateService: ReplicateService,
     private prisma: PrismaService,
   ) {}
 
@@ -138,7 +140,7 @@ export class ConversationController {
     }
 
     const { promptCost, content, responseCost } =
-      await this.openaiService.getChatCompletion(prompt.messages)
+      await this.replicateService.getChatCompletion(prompt.messages)
 
     return {
       promptCost: promptCost,

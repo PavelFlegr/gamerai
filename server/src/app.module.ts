@@ -8,18 +8,12 @@ import { ChatService } from './services/chat.service.js'
 import { ConversationController } from './controllers/conversation.controller.js'
 import { PrismaService } from './prisma.service.js'
 import { AuthGuard } from './auth.guard.js'
-import { LoggerModule } from 'nestjs-pino'
 import { CollaborationController } from './controllers/collaboration.controller.js'
 import { OpenaiService } from './services/openai.service.js'
 import { FileController } from './controllers/file.controller.js'
+import { ReplicateService } from './services/replicate.service.js'
 @Module({
-  imports: [
-    EventEmitterModule.forRoot(),
-    ConfigModule.forRoot(),
-    LoggerModule.forRoot({
-      pinoHttp: [{ transport: { target: 'pino-pretty' } }, null],
-    }),
-  ],
+  imports: [EventEmitterModule.forRoot(), ConfigModule.forRoot()],
   controllers: [
     AppController,
     ConversationController,
@@ -33,6 +27,7 @@ import { FileController } from './controllers/file.controller.js'
     PrismaService,
     AuthGuard,
     OpenaiService,
+    ReplicateService,
   ],
 })
 export class AppModule {
