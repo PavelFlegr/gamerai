@@ -20,6 +20,7 @@ import { ContextEmbedding, Message } from '@prisma/client'
 import { EmbeddingResponse, OpenaiService } from '../services/openai.service.js'
 import { chunkSubstr } from '../utils.js'
 import { ReplicateService } from '../services/replicate.service.js'
+import { LlamaService } from '../services/llama.service.js'
 
 interface MessageInput {
   content: string
@@ -40,6 +41,7 @@ export class ConversationController {
   constructor(
     private openaiService: OpenaiService,
     private replicateService: ReplicateService,
+    private llamaService: LlamaService,
     private prisma: PrismaService,
   ) {}
 
@@ -124,23 +126,23 @@ export class ConversationController {
   async sendPrompt(prompt: Prompt): Promise<PromptResponse> {
     if (prompt.systemMsg !== '') {
       prompt.messages = [
-        ...prompt.messages,
         { role: 'system', content: prompt.systemMsg },
+        ...prompt.messages,
       ]
     }
 
     if (prompt.context) {
       prompt.messages = [
-        ...prompt.messages,
         {
           role: 'system',
           content: `Here is some context that should help you answer the users question:\n${prompt.context}`,
         },
+        ...prompt.messages,
       ]
     }
 
     const { promptCost, content, responseCost } =
-      await this.replicateService.getChatCompletion(prompt.messages)
+      await this.openaiService.getChatCompletion(prompt.messages)
 
     return {
       promptCost: promptCost,
@@ -160,7 +162,7 @@ export class ConversationController {
   ) {
     const conversation = await this.prisma.conversation.findFirst({
       where: { id, userId: user.sub },
-      include: { messages: true },
+      include: { messages: { orderBy: { createdAt: 'asc' } } },
     })
     let context: ContextEmbedding[]
     let inputEmbedding: EmbeddingResponse
@@ -197,6 +199,15 @@ export class ConversationController {
               cost: response.promptCost + (inputEmbedding?.cost ?? 0),
               user: { connect: { id: user.sub } },
             },
+          ],
+        },
+      },
+    })
+    await this.prisma.conversation.update({
+      where: { id },
+      data: {
+        messages: {
+          create: [
             {
               ...response.message,
               user: { connect: { id: user.sub } },

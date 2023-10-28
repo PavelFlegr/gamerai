@@ -12,6 +12,7 @@ import { CollaborationController } from './controllers/collaboration.controller.
 import { OpenaiService } from './services/openai.service.js'
 import { FileController } from './controllers/file.controller.js'
 import { ReplicateService } from './services/replicate.service.js'
+import { LlamaService } from './services/llama.service.js'
 @Module({
   imports: [EventEmitterModule.forRoot(), ConfigModule.forRoot()],
   controllers: [
@@ -28,6 +29,7 @@ import { ReplicateService } from './services/replicate.service.js'
     AuthGuard,
     OpenaiService,
     ReplicateService,
+    LlamaService,
   ],
 })
 export class AppModule {
