@@ -45,7 +45,7 @@ export class OpenaiService implements OnModuleInit {
     try {
       const res = await this.openai.createChatCompletion({
         messages: messages,
-        model: 'gpt-4',
+        model: 'gpt-4-1106-preview',
       })
       if (res.status != 200) {
         throw new Error(res.statusText)

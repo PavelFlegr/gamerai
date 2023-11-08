@@ -15,6 +15,7 @@ import { User } from '../user.decorator.js'
 import { AuthUser } from '../model/auth-user.js'
 import { Collaboration } from '@prisma/client'
 import { OpenaiService } from '../services/openai.service.js'
+import { LlamaService } from '../services/llama.service.js'
 
 interface CollaborationInput {
   document: string
@@ -31,6 +32,7 @@ export class CollaborationController {
   constructor(
     private prisma: PrismaService,
     private openaiService: OpenaiService,
+    private llamaService: LlamaService,
   ) {}
 
   @Get()
